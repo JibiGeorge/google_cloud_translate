@@ -1,4 +1,5 @@
 import Header from "./components/Header";
+import { Translate } from "@google-cloud/translate/build/src/v2";
 
 const credentials = {
   type: process.env.GOOGLE_TRANSLATE_ACCOUNT_TYPE,
@@ -15,6 +16,8 @@ const credentials = {
 }
 
 export default function Home({ data }) {
+  console.log('data', data);
+
   return (
     <div className='w-full h-screen flex flex-col'>
       <Header />
@@ -32,15 +35,38 @@ export default function Home({ data }) {
   )
 }
 
-export function getServerSideProps() {
+export async function getServerSideProps() {
   const data = {
     image: 'https://fostervictor.com/wp-content/uploads/2019/12/AtomicHabits_1book-768x993.png',
     about: `Atomic Habits is the most comprehensive and practical guide on how to create good habits, break bad ones, and get 1 percent better every day. I do not believe you will find a more actionable book on the subject of habits and improvement. If you're having trouble changing your habits, the problem isn't you.`
   }
 
+  const translate = new Translate({
+    credentials: credentials,
+    projectId: credentials.project_id
+  })
+
+  const translateText = async (text, language) => {
+    try {
+      let [response] = await translate.translate(text, language)
+      return response;
+    } catch (error) {
+      console.log('error found in detect', error);
+      return 0;
+    }
+  }
+  const targetLanguage = 'hi';
+
+  const translatedAbout = await translateText(data.about, targetLanguage);
+
+  const translatedData = {
+    ...data,
+    about: translatedAbout,
+  };
+
   return {
     props: {
-      data
+      data: translatedData
     }
   }
 }
